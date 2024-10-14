@@ -30,6 +30,10 @@ public class Pipeline {
     @JoinColumn(name = "account_id")
     private Account account;
 
-    @OneToMany(mappedBy = "pipeline", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "pipeline", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Status> statuses;
+
+    public boolean getMain() {
+        return isMain;
+    }
 }

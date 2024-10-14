@@ -17,7 +17,7 @@ public class Status {
 
     private String name;
 
-    private int order;
+    private int sort;
 
     @ManyToOne
     @JoinColumn(name = "pipeline_id", nullable = false) // pipeline_id как внешний ключ

@@ -11,6 +11,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -18,8 +21,10 @@ import uz.nexgroup.nexcrm.component.DomainUtils;
 import uz.nexgroup.nexcrm.component.PasswordGenerator;
 import uz.nexgroup.nexcrm.model.Account;
 import uz.nexgroup.nexcrm.model.Permission;
+import uz.nexgroup.nexcrm.model.Pipeline;
 import uz.nexgroup.nexcrm.model.RefreshToken;
 import uz.nexgroup.nexcrm.model.Role;
+import uz.nexgroup.nexcrm.model.Status;
 import uz.nexgroup.nexcrm.model.User;
 import uz.nexgroup.nexcrm.repository.RefreshTokenRepository;
 import uz.nexgroup.nexcrm.repository.UserRepository;
@@ -31,6 +36,7 @@ import org.springframework.security.core.Authentication;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -58,6 +64,12 @@ public class AuthService {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    StatusService statusService;
+
+    @Autowired
+    PipelineService pipelineService;
 
     public TokenResponse generateTokenResponse(Authentication authentication) {
         String accessToken = generateToken(authentication,36000L);
@@ -128,6 +140,30 @@ public class AuthService {
         permissions.setContacts(permissionDetail);
         permissions.setTasks(permissionDetail);
 
+        // create default statuses
+        List<Status> statuses = new ArrayList<Status>();
+
+        String[] names = {"Первичный контакт", "Переговоры", "Принимаю решение", "Согласовние договора"};
+        for(int i = 0; i < names.length; i++) {
+            String statusName = names[i];
+            Status status = new Status();
+            status.setName(statusName);
+            status.setSort(i);
+            statuses.add(status);
+        }
+        
+        statuses = statusService.createStatus(statuses);
+        // create main pipeline
+        Pipeline pipeline = new Pipeline();
+
+        pipeline.setAccount(account);
+        pipeline.setMain(true);
+        pipeline.setName("Воронка");
+        pipeline.setSort(1);
+        pipeline.setStatuses(statuses);
+
+        pipeline = pipelineService.createPipeline(pipeline);
+    
         Role role = roleService.creatRole("ADMIN", account, permissions, true);
         userService.setRole(user, role);
 
@@ -171,5 +207,13 @@ public class AuthService {
     private boolean isTokenExpiringSoon(RefreshToken refreshToken) {
         LocalDateTime oneDayFromNow = LocalDateTime.now().plus(1, ChronoUnit.DAYS);
         return refreshToken.getExpiresAt().isBefore(oneDayFromNow);
+    }
+
+    public void reset(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("User with email: " + email + " not found"));
+        userService.setPassword(user, email);
+        userRepository.save(user);
+        String password = PasswordGenerator.generateRandomPassword();
+        emailService.sendEmail(email, "Regstration", "Your new password: " + password);
     }
 }

@@ -1,28 +1,15 @@
-package uz.nexgroup.nexcrm.response;
-
-import java.time.LocalDateTime;
+package uz.nexgroup.nexcrm.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-public class LeadResponse {
-
-    private Long id;
-
+public class ContactRequest {
     private String name;
-
-    private Long price;
 
     @JsonProperty("responsible_id")
     private Long responsibleId;
-
-    @JsonProperty("status_id")
-    private Long statusId;
-
-    @JsonProperty("pipeline_id")
-    private Long pipelineId;
 
     @JsonProperty("created_by")
     private Long createdById;
@@ -35,7 +22,4 @@ public class LeadResponse {
 
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
-    
-    @JsonProperty("account_id")
-    private Long accountId;
 }

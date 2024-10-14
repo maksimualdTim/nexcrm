@@ -51,7 +51,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
  import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
  import org.springframework.security.web.SecurityFilterChain;
- 
+ import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+ import java.util.Arrays;
  /**
   * Security configuration for the main application.
   *
@@ -78,13 +81,16 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
      public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
          // @formatter:off
          http
+                .cors((cors)->{
+                    cors.configurationSource(apiConfigurationSource());
+                })
                  .authorizeHttpRequests((authorize) -> authorize
                          .requestMatchers(api + "/auth/**").permitAll()
                          .requestMatchers(api + "/account/**").hasAnyRole("ADMIN")
                          .anyRequest().authenticated()
                  )
                  .csrf((csrf) -> {
-                    csrf.ignoringRequestMatchers(api + "/auth/**");
+                    csrf.ignoringRequestMatchers(api + "/**");
                  })
                  .httpBasic(Customizer.withDefaults())
                  .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
@@ -96,7 +102,17 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthen
          // @formatter:on
          return http.build();
      }
- 
+ 	CorsConfigurationSource apiConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+		configuration.setAllowedMethods(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("*"));
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
      @Bean
      JwtDecoder jwtDecoder() {
          return NimbusJwtDecoder.withPublicKey(this.key).build();

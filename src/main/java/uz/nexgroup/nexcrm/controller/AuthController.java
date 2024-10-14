@@ -34,7 +34,7 @@ public class AuthController {
 	public TokenResponse login(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = 
         authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword())
+            new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
         );
 		return authService.generateTokenResponse(authentication);
 	}
@@ -59,7 +59,8 @@ public class AuthController {
     }
     
     @PostMapping("/reset")
-    public String reset(@RequestBody String entity) {
-        return entity;
+    public ResponseEntity<Void> reset(@RequestBody String email) {
+        authService.reset(email);
+        return ResponseEntity.ok().build();
     }
 }

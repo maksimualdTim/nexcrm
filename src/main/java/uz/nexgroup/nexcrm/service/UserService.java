@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,11 @@ public class UserService {
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+    }
 
     public User createUser(String email, String name, String password) throws DuplicateEmailException{
         try {
@@ -57,5 +63,9 @@ public class UserService {
             }
         }
         return null;
+    }
+
+    public void setPassword(User user, String password) {
+        user.setPassword(passwordEncoder.encode(password));
     }
 }
